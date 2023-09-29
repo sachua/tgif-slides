@@ -32,7 +32,7 @@ jobs:
       - name: Install slidev
         run:  npm i -g @slidev/cli
 
-        name: Install Playwright
+      - name: Install Playwright
         run: npm i -D playwright-chromium
 
       - name: Build
