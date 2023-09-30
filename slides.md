@@ -21,8 +21,8 @@ class: text-center
 
 # We don't enjoy manual work
 
-<div class="flex items-center justify-center mt-15">
-  <img class="h-80" src="/manual-labor.gif">
+<div class="flex items-center justify-center">
+  <img class="h-70" src="/manual-labor.gif">
 </div>
 
 
@@ -69,8 +69,8 @@ class: text-center
 
 # Let's automate it!
 
-<div class="flex items-center justify-center mt-15">
-  <img class="h-80" src="/automated.gif">
+<div class="flex items-center justify-center">
+  <img class="h-70" src="/automated.gif">
 </div>
 
 ---
