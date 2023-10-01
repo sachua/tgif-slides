@@ -202,7 +202,7 @@ Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 
 ---
 
-# Components
+# Considerations
 <div class="mt-10"></div>
 
 1. **Intermediate Certificate Authority**
@@ -217,7 +217,7 @@ Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 
 ---
 
-# Components
+# Considerations
 <div class="mt-10"></div>
 
 3. **DNS Records**
@@ -228,3 +228,30 @@ Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 
 4. **Configuration management at scale**
     - Push down configuration to individual clusters in an automated fashion
+
+---
+
+# What is ACME?
+<div class="mt-10"></div>
+
+- Automated Certificate Management Environment (ACME)
+- Protocol for automatic validation and issuance of certificates from a Certificate Authority (CA)
+- No human interaction required
+
+<br><br>
+
+### Summarized steps:
+1. The agent proves to the CA that the webserver controls a domain
+2. The agent then can proceed to request, renew, and revoke certificates for that domain
+
+
+---
+layout: center
+class: text-center
+---
+
+# ACME Example
+
+<div class="flex items-center justify-center">
+  <img class="h-90" src="/acme.png">
+</div>
