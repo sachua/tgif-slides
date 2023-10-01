@@ -123,21 +123,17 @@ System(ca, "Smallstep","Intermediate Certificate Authority")
 
 Rel_R(dev,vra,"Use  account  creation  catalog")
 Rel(vra,svc_acc,"Creates  minimum  permissible  account")
-
 Rel(dev,ingress,"Creates  Ingress-01")
 Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
-Rel(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
-
+Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
 Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
-Rel(svc_acc,record,"Creates  'A'  record")
-
-BiRel_U(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
+Rel_D(svc_acc,record,"Creates  'A'  record")
+BiRel_L(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
 Rel(cert_mgr,acme_pod,"Creates  pod  hosting  HTTP-01  challenge")
-Rel(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
+Rel_D(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
 Rel(ca,acme_ing,"Verifies  HTTP-01  challenge")
 Rel_R(acme_ing,acme_pod,"")
-
-Rel(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
+Rel_R(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
 Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 @enduml
 ```
@@ -185,21 +181,17 @@ System(ca, "Smallstep","Intermediate Certificate Authority")
 
 Rel_R(dev,vra,"Use  account  creation  catalog")
 Rel(vra,svc_acc,"Creates  minimum  permissible  account")
-
 Rel(dev,ingress,"Creates  Ingress-01")
 Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
-Rel(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
-
+Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
 Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
-Rel(svc_acc,record,"Creates  'A'  record")
-
-BiRel_U(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
+Rel_D(svc_acc,record,"Creates  'A'  record")
+BiRel_L(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
 Rel(cert_mgr,acme_pod,"Creates  pod  hosting  HTTP-01  challenge")
-Rel(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
+Rel_D(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
 Rel(ca,acme_ing,"Verifies  HTTP-01  challenge")
 Rel_R(acme_ing,acme_pod,"")
-
-Rel(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
+Rel_R(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
 Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 @enduml
 ```
