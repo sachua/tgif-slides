@@ -33,7 +33,7 @@ jobs:
         run:  bun i -g @slidev/cli
 
       - name: Install Playwright
-        run: bun i -D playwright-chromium
+        run: bun i -D playwright-chromium && bun playwright install
 
       - name: Build
         run: slidev build --base tgif-slides
