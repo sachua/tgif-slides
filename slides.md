@@ -279,9 +279,6 @@ class: text-center
 
 # Smallstep deployment
 
-- Highly available and scalable
-- Validated with Smallstep engineering team
-
 <div class="flex items-center justify-center h-80">
 <LightOrDark>
 <template #dark>
