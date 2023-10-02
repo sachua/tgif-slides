@@ -1,0 +1,11 @@
+.slidev-layout {
+
+  h1 {
+    @apply mb-10;
+  }
+
+  p {
+    color: white;
+  }
+
+}

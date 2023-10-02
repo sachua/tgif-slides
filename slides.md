@@ -31,15 +31,19 @@ class: text-center
 # Manual DNS Creation
 
 <div class="flex items-center justify-center mt-20">
-```mermaid{scale: 0.8}
+```mermaid{scale: 0.8,mirrorActors: false}
 sequenceDiagram
-  participant D as Developer
+  autonumber
+  actor D as Developer
   participant K as Kubernetes
-  participant S as Sysadmin
+  actor S as Sysadmin
   participant AD as Active Directory Domain Services
-  D->>K: Create Ingress
-  D->>S: Submit Production Change Request
-  S->>AD: Create DNS entry
+  D->>+K: Create Ingress
+  K-->>-D: Ingress created
+  D->>+S: Submit Production Change Request
+  S->>+AD: Create DNS entry
+  AD-->>-S: DNS entry created
+  S-->>-D: Production Change Request resolved
 ```
 </div>
 
@@ -49,15 +53,18 @@ sequenceDiagram
 # Manual TLS Certificate Creation
 
 <div class="flex items-center justify-center mt-15">
-```mermaid{scale: 0.8}
+```mermaid{scale: 0.8,mirrorActors: false}
 sequenceDiagram
-  participant D as Developer
+  autonumber
+  actor D as Developer
   participant CA as Certificate Authority
   participant S as Server
-  D->>D: Generate Certificate Signing Request
-  D->>CA: Submit Certificate Signing Request
-  CA->>D: Issues TLS Certificate
-  D->>S: Inject TLS Certificate for HTTPS
+  D->>+S: Generate Certificate Signing Request
+  S-->>-D: Certificate Signing Request generated
+  D->>+CA: Submit Certificate Signing Request
+  CA-->>-D: Issues TLS certificate
+  D->>+S: Inject TLS certificate for HTTPS
+  S-->>-D: Ingress uses TLS certificate for HTTPS
 ```
 </div>
 
@@ -77,10 +84,10 @@ class: text-center
 
 # Architecture
 
-<div class="flex items-center justify-center h-110">
+<div class="flex items-center justify-center h-100">
 <LightOrDark>
 <template #dark>
-```plantuml{scale: 0.8}
+```plantuml{scale: 0.85}
 @startuml
 skinparam {
   backgroundcolor transparent
@@ -102,12 +109,12 @@ AddBoundaryTag("zone", $bgColor="#1f427a", $fontColor="white", $borderThickness=
 Person(dev,"Developer",)
 Boundary(a0,'Kubernetes Cluster' ){
   rectangle padding <<DUMMY>> {
-    System(ingress,"Ingress-App")
+    Container(ingress,"Ingress-App","Ingress")
     System(ext_dns,"External-DNS")
     System(cert_mgr,"Cert-Manager")
-    System(acme_pod,"ACME Solver")
-    System(acme_ing,"Ingress-ACME")
-    Container(cert,"Cert-Secret")
+    Container(acme_pod,"ACME Solver","Pod")
+    Container(acme_ing,"Ingress-ACME","Ingress")
+    Container(cert,"Cert-Secret","Secret")
   }
 }
 System(vra, "VMware vRealise Automation")
@@ -123,7 +130,7 @@ System(ca, "Smallstep","Intermediate Certificate Authority")
 
 Rel_R(dev,vra,"Use  account  creation  catalog")
 Rel(vra,svc_acc,"Creates  minimum  permissible  account")
-Rel(dev,ingress,"Creates  Ingress-01")
+Rel(dev,ingress,"Creates  Ingress-App")
 Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
 Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
 Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
@@ -139,7 +146,7 @@ Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 ```
 </template>
 <template #light>
-```plantuml{scale: 0.8}
+```plantuml{scale: 0.85}
 @startuml
 skinparam {
   backgroundcolor transparent
@@ -160,12 +167,12 @@ AddBoundaryTag("zone", $bgColor="#1f427a", $fontColor="white", $borderThickness=
 Person(dev,"Developer",)
 Boundary(a0,'Kubernetes Cluster' ){
   rectangle padding <<DUMMY>> {
-    System(ingress,"Ingress-App")
+    Container(ingress,"Ingress-App","Ingress")
     System(ext_dns,"External-DNS")
     System(cert_mgr,"Cert-Manager")
-    System(acme_pod,"ACME Solver")
-    System(acme_ing,"Ingress-ACME")
-    Container(cert,"Cert-Secret")
+    Container(acme_pod,"ACME Solver","Pod")
+    Container(acme_ing,"Ingress-ACME","Ingress")
+    Container(cert,"Cert-Secret","Secret")
   }
 }
 System(vra, "VMware vRealise Automation")
@@ -181,7 +188,7 @@ System(ca, "Smallstep","Intermediate Certificate Authority")
 
 Rel_R(dev,vra,"Use  account  creation  catalog")
 Rel(vra,svc_acc,"Creates  minimum  permissible  account")
-Rel(dev,ingress,"Creates  Ingress-01")
+Rel(dev,ingress,"Creates  Ingress-App")
 Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
 Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
 Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
@@ -202,46 +209,16 @@ Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 
 ---
 
-# Considerations
-<div class="mt-10"></div>
-
-1. **Intermediate Certificate Authority**
-    - Supports ACME protocol
-    - Highly Available and Scalable
-
-2. **TLS Certificates**
-    - Supports ACME protocol
-    - Automatically request TLS certificates based on Ingress records
-    - Automatically renew TLS certificates when nearing expiry
-
-
----
-
-# Considerations
-<div class="mt-10"></div>
-
-3. **DNS Records**
-    - Automatically synchronize DNS records with Ingress records
-    - Includes permissions and ownership to prevent overwriting of resources
-    - Narrowing blast-radius of allowing zone-transfer by restricting to specific delegated zone for a specific IP range
-    - Zone domain name should accommodate AuthMS token cookie to be loaded in the browser
-
-4. **Configuration management at scale**
-    - Push down configuration to individual clusters in an automated fashion
-
----
-
 # What is ACME?
-<div class="mt-10"></div>
 
-- Automated Certificate Management Environment (ACME)
-- Protocol for automatic validation and issuance of certificates from a Certificate Authority (CA)
+- Automated Certificate Management Environment
+- Protocol for automatic validation and issuance of certificates from a Certificate Authority
 - No human interaction required
 
-<br><br>
+<br>
 
 ### Summarized steps:
-1. The agent proves to the CA that the webserver controls a domain
+1. The agent proves to the Certificate Authority that the webserver controls a domain
 2. The agent then can proceed to request, renew, and revoke certificates for that domain
 
 
@@ -253,5 +230,218 @@ class: text-center
 # ACME Example
 
 <div class="flex items-center justify-center">
-  <img class="h-90" src="/acme.png">
+  <img class="h-70" src="/acme.png">
+</div>
+
+
+---
+
+# Possible choices
+
+### ACME-ACDS-Server
+- Enables installing ACME-ACDS as a website in Windows Server Active Directory to enable ACME certificate requests from Windows Server Active Directory Certificate Services
+- Hobby project with no enterprise level support
+- <span style="color: #fa4b4b">Installing custom components in Active Directory may lead to downstream issues with patching/upgrading</span>
+
+
+<br>
+
+### Vault
+- Generic secrets management product
+- Does not have ACME support
+- <span style="color: #fa4b4b">Need to solve the bottom turtle problem ("Secret Zero")</span>
+
+
+---
+
+# What we chose
+
+### Smallstep
+- Specialised Intermediate Certificate Authority to issue certificates
+- Supports ACME protocol HTTP-01 challenge
+- Templates to customise certificate fields for Subject Alternative Names
+- Plays well with Cert-Manager
+- No sensitive data stored in the database
+- Certificate Authority signing key is encrypted at disk
+
+
+---
+
+# Certificate Lifetime
+
+- Certificates should be short-lived
+- Reduce ecosystem reliance on "broken" revocation checking solutions that cannot fail-closed
+  - If revocation check response does not come back, the browser simply forgets about it
+  - Chrome doesn't even do revocation checks
+- **90-days validity** follows best practices from Lets Encrypt and Google
+
+---
+
+# Smallstep deployment
+
+- Highly available and scalable
+- Validated with Smallstep engineering team
+
+<div class="flex items-center justify-center h-80">
+<LightOrDark>
+<template #dark>
+```plantuml{scale: 0.7}
+@startuml
+skinparam {
+  backgroundcolor transparent
+  rectangle<<DUMMY>> {
+    borderColor transparent
+    stereotypeFontSize 0
+    fontSize 0
+  }
+}
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+HIDE_STEREOTYPE()
+
+UpdateBoundaryStyle($fontColor="#d2d4d2",$borderColor="#d2d4d2",$borderStyle="line")
+UpdateRelStyle($textColor="#d2d4d2",$lineColor="#d2d4d2")
+
+Boundary(a0,'Kubernetes Cluster' ){
+  rectangle padding <<DUMMY>> {
+    Container(stepca_ing,"Step-CA","Ingress")
+    Container(stepca_svc,"Step-CA", "Service")
+    Container(stepca_pod,"Step-CA", "Pods")
+    Container(cnpg_svc,"CloudNativePG","Service")
+    Container(cnpg_pod,"CloudNativePG","Pods")
+    Container(checker,"Cert-Checker","K8s CronJob")
+  }
+}
+Boundary(b0,'Kubernetes Cluster' ){
+}
+System(s3, "S3")
+System(mm, "Mattermost")
+
+Rel(b0,stepca_ing,"")
+Rel_L(stepca_ing,stepca_svc,"")
+Rel_L(stepca_svc,stepca_pod,"")
+Rel_D(stepca_pod,cnpg_svc,"")
+Rel_L(cnpg_svc,cnpg_pod,"")
+Rel_R(cnpg_svc,checker,"")
+Rel_L(cnpg_pod,s3,"")
+Rel_R(checker,mm,"")
+@enduml
+```
+</template>
+<template #light>
+```plantuml{scale: 0.7}
+@startuml
+skinparam {
+  backgroundcolor transparent
+  rectangle<<DUMMY>> {
+    borderColor transparent
+    stereotypeFontSize 0
+    fontSize 0
+  }
+}
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+HIDE_STEREOTYPE()
+
+UpdateBoundaryStyle($borderStyle="line")
+
+Boundary(a0,'Kubernetes Cluster' ){
+  rectangle padding <<DUMMY>> {
+    Container(stepca_ing,"Step-CA","Ingress")
+    Container(stepca_svc,"Step-CA", "Service")
+    Container(stepca_pod,"Step-CA", "Pods")
+    Container(cnpg_svc,"CloudNativePG","Service")
+    Container(cnpg_pod,"CloudNativePG","Pods")
+    Container(checker,"Cert-Checker","K8s CronJob")
+  }
+}
+Boundary(b0,'Kubernetes Cluster' ){
+}
+System(s3, "S3")
+System(mm, "Mattermost")
+
+Rel(b0,stepca_ing,"")
+Rel_L(stepca_ing,stepca_svc,"")
+Rel_L(stepca_svc,stepca_pod,"")
+Rel_D(stepca_pod,cnpg_svc,"")
+Rel_L(cnpg_svc,cnpg_pod,"")
+Rel_R(cnpg_svc,checker,"")
+Rel_L(cnpg_pod,s3,"")
+Rel_R(checker,mm,"")
+@enduml
+```
+</template>
+</LightOrDark>
+</div>
+
+
+---
+
+# Cert-Manager
+
+- Adds certificates and certificate issuers as resource types in Kubernetes clusters
+- Simplifies process of obtaining, renewing and using those certificates
+- Deployed into individual downstream clusters
+
+<div class="flex items-center justify-center mt-20">
+  <img class="h-50" src="/acme.png">
+</div>
+
+
+---
+
+## External-DNS
+- Allows controlling of DNS records dynamically via Kubernetes in a DNS provider-agnostic way
+- Available for various DNS providers, including RFC2136 with Kerberos for Windows Server Active Directory
+- Deployed into individual downstream clusters
+- <span style="color: #fa4b4b;">Does not support multi-cluster natively</span>
+
+## Active Directory
+- Enable VMware vRealize Automation to create minimum permissible accounts
+- Minimum permissible accounts can only create 'A' records in a specific DNS zone, update and delete own records
+- Zone-Transfer needs to be enabled for External-DNS to be able to compare 'A' records
+- Allow Zone-Transfer only for specific DNS zone to Tanzu Egress CIDR range
+
+
+---
+
+# Multi-cluster External-DNS
+<p></p>
+We control External-DNS's access to Active Directory on 2 levels
+
+<br><br>
+
+1. <span style="color: #fc8835;">Cluster ID</span> - A unique text tagged to DNS records created, to identify the owner of the DNS record
+    - Automatically created in the format `supervisor_namespace`-`cluster_name` when cluster is onboarded to Rancher Dashboard
+2. <span style="color: #059c2d;">AD account credentials</span> - Required for External-DNS to be able to create and modify DNS records
+    - Minimum permissible account created through VMware vRealize Automation
+
+
+---
+
+# Multi-cluster External-DNS
+
+<div class="flex items-center justify-center">
+```mermaid{scale: 0.5,mirrorActors: false}
+sequenceDiagram
+  autonumber
+  participant E as External-DNS
+  participant K as Kubernetes
+  participant AD as Active Directory Domain Services
+  E->>+K: Request AD account credentials and Cluster ID
+  K-->>-E: Return AD account credentials and Cluster ID
+  loop Every 25 seconds
+    E->>+AD: Request DNS records tagged with Cluster ID
+    AD-->>-E: Return DNS records
+    E->>+K: Request cluster Ingress records
+    K-->>-E: Return Ingress records
+    E->>E: Compares DNS records with Ingress records
+  end
+  opt Detected Changes
+    E->>+AD: Create 'A' records, as well as 'TXT' records to tag the 'A' records the cluster ID
+    AD-->>-E: 'A' records and 'TXT' records created
+  end
+```
 </div>
