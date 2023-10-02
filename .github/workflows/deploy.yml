@@ -22,18 +22,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
+      - uses: oven-sh/setup-bun@v1
         with:
-          node-version: 'lts/*'
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm install
+        run: bun install
 
       - name: Install slidev
-        run:  npm i -g @slidev/cli
+        run:  bun i -g @slidev/cli
 
       - name: Install Playwright
-        run: npm i -D playwright-chromium
+        run: bun i -D playwright-chromium
 
       - name: Build
         run: slidev build --base tgif-slides
