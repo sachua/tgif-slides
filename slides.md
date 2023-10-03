@@ -105,13 +105,14 @@ HIDE_STEREOTYPE()
 UpdateBoundaryStyle($fontColor="#d2d4d2",$borderColor="#d2d4d2",$borderStyle="line")
 UpdateRelStyle($textColor="#d2d4d2",$lineColor="#d2d4d2")
 AddBoundaryTag("zone", $bgColor="#1f427a", $fontColor="white", $borderThickness="0")
+AddSystemTag("highlight",$bgColor="#17a348",$borderColor="#0f6e30")
 
 Person(dev,"Developer",)
 Boundary(a0,'Kubernetes Cluster' ){
   rectangle padding <<DUMMY>> {
     Container(ingress,"Ingress-App","Ingress")
-    System(ext_dns,"External-DNS")
-    System(cert_mgr,"Cert-Manager")
+    System(ext_dns,"External-DNS",$tags="highlight")
+    System(cert_mgr,"Cert-Manager",$tags="highlight")
     Container(acme_pod,"ACME Solver","Pod")
     Container(acme_ing,"Ingress-ACME","Ingress")
     Container(cert,"Cert-Secret","Secret")
@@ -209,6 +210,79 @@ Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 
 ---
 
+## External-DNS
+- Allows controlling of DNS records dynamically via Kubernetes in a DNS provider-agnostic way
+- Available for various DNS providers, including RFC2136 with Kerberos for Windows Server Active Directory
+- Deployed into individual downstream clusters
+- <span style="color: #fa4b4b;">Does not support multi-cluster natively</span>
+
+## Active Directory
+- Enable VMware vRealize Automation to create minimum permissible accounts
+- Minimum permissible accounts can only create 'A' records in a specific DNS zone, update and delete own records
+- Zone-Transfer needs to be enabled for External-DNS to be able to compare 'A' records
+- Allow Zone-Transfer only for specific DNS zone to Tanzu Egress CIDR range
+
+
+---
+
+# Multi-cluster External-DNS
+<span></span>
+
+We control External-DNS's access to Active Directory on 2 levels
+
+<br/>
+
+1. **Cluster ID** — A unique text tagged to DNS records created, to identify the owner of the DNS record
+
+    - Automatically created in the format `supervisor_namespace`-`cluster_name` when cluster is onboarded to Rancher Dashboard
+
+<br/>
+
+2. **AD account credentials** — Required for External-DNS to be able to create and modify DNS records
+
+    - Minimum permissible account created through VMware vRealize Automation
+
+
+---
+
+# Automated multi-cluster DNS Creation
+
+<div class="flex items-center justify-center">
+```mermaid{scale: 0.5,mirrorActors: false}
+sequenceDiagram
+  autonumber
+  participant E as External-DNS
+  participant K as kube-apiserver
+  participant AD as Active Directory Domain Services
+  E->>+K: Request AD account credentials and Cluster ID
+  K-->>-E: Return AD account credentials and Cluster ID
+  loop Every 25 seconds
+    E->>+K: Request cluster Ingress records
+    K-->>-E: Return Ingress records
+    E->>+AD: Request DNS records tagged with Cluster ID
+    AD-->>-E: Return DNS records
+    E->>E: Compares DNS records with Ingress records
+  end
+  opt Detected Changes
+    E->>+AD: Create 'A' records, as well as 'TXT' records to tag the 'A' records the cluster ID
+    AD-->>-E: 'A' records and 'TXT' records created
+  end
+```
+</div>
+
+
+---
+layout: center
+class: text-center
+---
+
+<div class="flex items-center justify-center">
+  <img class="h-60" src="/nice1.gif">
+</div>
+
+
+---
+
 # What is ACME?
 
 - Automated Certificate Management Environment
@@ -227,7 +301,7 @@ layout: center
 class: text-center
 ---
 
-# ACME Example
+# HTTP-01 Example
 
 <div class="flex items-center justify-center">
   <img class="h-70" src="/acme.png">
@@ -389,56 +463,59 @@ Rel_R(checker,mm,"")
 
 ---
 
-## External-DNS
-- Allows controlling of DNS records dynamically via Kubernetes in a DNS provider-agnostic way
-- Available for various DNS providers, including RFC2136 with Kerberos for Windows Server Active Directory
-- Deployed into individual downstream clusters
-- <span style="color: #fa4b4b;">Does not support multi-cluster natively</span>
-
-## Active Directory
-- Enable VMware vRealize Automation to create minimum permissible accounts
-- Minimum permissible accounts can only create 'A' records in a specific DNS zone, update and delete own records
-- Zone-Transfer needs to be enabled for External-DNS to be able to compare 'A' records
-- Allow Zone-Transfer only for specific DNS zone to Tanzu Egress CIDR range
-
-
----
-
-# Multi-cluster External-DNS
-<p></p>
-We control External-DNS's access to Active Directory on 2 levels
-
-<br><br>
-
-1. <span style="color: #fc8835;">Cluster ID</span> - A unique text tagged to DNS records created, to identify the owner of the DNS record
-    - Automatically created in the format `supervisor_namespace`-`cluster_name` when cluster is onboarded to Rancher Dashboard
-2. <span style="color: #059c2d;">AD account credentials</span> - Required for External-DNS to be able to create and modify DNS records
-    - Minimum permissible account created through VMware vRealize Automation
-
-
----
-
-# Multi-cluster External-DNS
+# Automated TLS Certificate Creation
 
 <div class="flex items-center justify-center">
 ```mermaid{scale: 0.5,mirrorActors: false}
 sequenceDiagram
   autonumber
-  participant E as External-DNS
-  participant K as Kubernetes
-  participant AD as Active Directory Domain Services
-  E->>+K: Request AD account credentials and Cluster ID
-  K-->>-E: Return AD account credentials and Cluster ID
-  loop Every 25 seconds
-    E->>+AD: Request DNS records tagged with Cluster ID
-    AD-->>-E: Return DNS records
-    E->>+K: Request cluster Ingress records
-    K-->>-E: Return Ingress records
-    E->>E: Compares DNS records with Ingress records
-  end
-  opt Detected Changes
-    E->>+AD: Create 'A' records, as well as 'TXT' records to tag the 'A' records the cluster ID
-    AD-->>-E: 'A' records and 'TXT' records created
-  end
+  participant C as Cert-Manager
+  participant K as kube-apiserver
+  participant CA as Smallstep
+  C->>+K: Request Ingress records
+  K-->-C: Return Ingress records
+  C->>C: Generate Certificate Signing Request
+  C->>+CA: Submit Certificate Signing Request
+  CA-->>-C: Return HTTP-01 challenge
+  C->>+K: Create HTTP-01 challenge resources
+  K-->>-C: HTTP-01 challenge resources created
+  C->>+CA: HTTP-01 challenge ready
+  CA->>+K: Verify HTTP-01 challenge
+  K-->>-CA: Correct HTTP-01 challenge
+  CA-->>-C: Return TLS certificate
+  C->>+K: Inject TLS certificate for HTTPS
+  K-->>-C: Ingress uses TLS certificate for HTTPS
 ```
+</div>
+
+
+---
+layout: center
+class: text-center
+---
+
+<div class="flex items-center justify-center">
+  <img class="h-60" src="/nice2.gif">
+</div>
+
+
+---
+
+# GitOps for Configuration Management at Scale
+
+- Git as the single source of truth
+- Pull-based approach — don't need to expose kubeconfig secrets
+- Distributed initialisation system that makes it easy to customize applications and manage clusters from a single point
+<div class="flex items-center justify-center mt-10">
+  <img class="h-50" src="/fleet.png">
+</div>
+
+
+---
+layout: section
+---
+
+# Thank you
+<div class="flex items-center justify-center">
+  <img class="h-40" src="/thumbs-up.gif">
 </div>
