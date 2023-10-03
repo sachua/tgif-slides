@@ -3,6 +3,8 @@ layout: cover
 titleTemplate: '%s'
 author: Chua Song Ann
 download: true
+export:
+  dark: true
 ---
 
 # DNS + Certificates
@@ -86,7 +88,68 @@ class: text-center
 
 <div class="flex items-center justify-center h-100">
 <LightOrDark>
-<template #dark>
+  <template #light>
+
+```plantuml{scale: 0.85}
+@startuml
+skinparam {
+  backgroundcolor transparent
+  rectangle<<DUMMY>> {
+    borderColor transparent
+    stereotypeFontSize 0
+    fontSize 0
+  }
+}
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+HIDE_STEREOTYPE()
+
+UpdateBoundaryStyle($borderStyle="line")
+AddBoundaryTag("zone", $bgColor="#1f427a", $fontColor="white", $borderThickness="0")
+
+Person(dev,"Developer",)
+Boundary(a0,'Kubernetes Cluster' ){
+  rectangle padding <<DUMMY>> {
+    Container(ingress,"Ingress-App","Ingress")
+    System(ext_dns,"External-DNS")
+    System(cert_mgr,"Cert-Manager")
+    Container(acme_pod,"ACME Solver","Pod")
+    Container(acme_ing,"Ingress-ACME","Ingress")
+    Container(cert,"Cert-Secret","Secret")
+  }
+}
+System(vra, "VMware vRealise Automation")
+Boundary(b0,"Active Directory Domain Services") {
+  rectangle padding2 <<DUMMY>> {
+    Boundary(zone,"example.com","DNS Zone",$tags="zone"){
+      Container(record,"app.example.com","'A' record")
+    }
+    Person_Ext(svc_acc,"Minimum permissible account",$sprite="robot")
+  }
+}
+System(ca, "Smallstep","Intermediate Certificate Authority")
+
+Rel_R(dev,vra,"Use  account  creation  catalog")
+Rel(vra,svc_acc,"Creates  minimum  permissible  account")
+Rel(dev,ingress,"Creates  Ingress-App")
+Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
+Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
+Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
+Rel_D(svc_acc,record,"Creates  'A'  record")
+BiRel_L(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
+Rel(cert_mgr,acme_pod,"Creates  pod  hosting  HTTP-01  challenge")
+Rel_D(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
+Rel(ca,acme_ing,"Verifies  HTTP-01  challenge")
+Rel_R(acme_ing,acme_pod,"")
+Rel_R(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
+Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
+@enduml
+```
+
+  </template>
+  <template #dark>
+
 ```plantuml{scale: 0.85}
 @startuml
 skinparam {
@@ -145,65 +208,8 @@ Rel_R(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
 Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 @enduml
 ```
-</template>
-<template #light>
-```plantuml{scale: 0.85}
-@startuml
-skinparam {
-  backgroundcolor transparent
-  rectangle<<DUMMY>> {
-    borderColor transparent
-    stereotypeFontSize 0
-    fontSize 0
-  }
-}
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
 
-HIDE_STEREOTYPE()
-
-UpdateBoundaryStyle($borderStyle="line")
-AddBoundaryTag("zone", $bgColor="#1f427a", $fontColor="white", $borderThickness="0")
-
-Person(dev,"Developer",)
-Boundary(a0,'Kubernetes Cluster' ){
-  rectangle padding <<DUMMY>> {
-    Container(ingress,"Ingress-App","Ingress")
-    System(ext_dns,"External-DNS")
-    System(cert_mgr,"Cert-Manager")
-    Container(acme_pod,"ACME Solver","Pod")
-    Container(acme_ing,"Ingress-ACME","Ingress")
-    Container(cert,"Cert-Secret","Secret")
-  }
-}
-System(vra, "VMware vRealise Automation")
-Boundary(b0,"Active Directory Domain Services") {
-  rectangle padding2 <<DUMMY>> {
-    Boundary(zone,"example.com","DNS Zone",$tags="zone"){
-      Container(record,"app.example.com","'A' record")
-    }
-    Person_Ext(svc_acc,"Minimum permissible account",$sprite="robot")
-  }
-}
-System(ca, "Smallstep","Intermediate Certificate Authority")
-
-Rel_R(dev,vra,"Use  account  creation  catalog")
-Rel(vra,svc_acc,"Creates  minimum  permissible  account")
-Rel(dev,ingress,"Creates  Ingress-App")
-Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
-Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
-Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
-Rel_D(svc_acc,record,"Creates  'A'  record")
-BiRel_L(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
-Rel(cert_mgr,acme_pod,"Creates  pod  hosting  HTTP-01  challenge")
-Rel_D(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
-Rel(ca,acme_ing,"Verifies  HTTP-01  challenge")
-Rel_R(acme_ing,acme_pod,"")
-Rel_R(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
-Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
-@enduml
-```
-</template>
+  </template>
 </LightOrDark>
 </div>
 
@@ -355,7 +361,54 @@ class: text-center
 
 <div class="flex items-center justify-center h-80">
 <LightOrDark>
-<template #dark>
+  <template #light>
+
+```plantuml{scale: 0.7}
+@startuml
+skinparam {
+  backgroundcolor transparent
+  rectangle<<DUMMY>> {
+    borderColor transparent
+    stereotypeFontSize 0
+    fontSize 0
+  }
+}
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+HIDE_STEREOTYPE()
+
+UpdateBoundaryStyle($borderStyle="line")
+
+Boundary(a0,'Kubernetes Cluster' ){
+  rectangle padding <<DUMMY>> {
+    Container(stepca_ing,"Step-CA","Ingress")
+    Container(stepca_svc,"Step-CA", "Service")
+    Container(stepca_pod,"Step-CA", "Pods")
+    Container(cnpg_svc,"CloudNativePG","Service")
+    Container(cnpg_pod,"CloudNativePG","Pods")
+    Container(checker,"Cert-Checker","K8s CronJob")
+  }
+}
+Boundary(b0,'Kubernetes Cluster' ){
+}
+System(s3, "S3")
+System(mm, "Mattermost")
+
+Rel(b0,stepca_ing,"")
+Rel_L(stepca_ing,stepca_svc,"")
+Rel_L(stepca_svc,stepca_pod,"")
+Rel_D(stepca_pod,cnpg_svc,"")
+Rel_L(cnpg_svc,cnpg_pod,"")
+Rel_R(cnpg_svc,checker,"")
+Rel_L(cnpg_pod,s3,"")
+Rel_R(checker,mm,"")
+@enduml
+```
+
+  </template>
+  <template #dark>
+
 ```plantuml{scale: 0.7}
 @startuml
 skinparam {
@@ -399,51 +452,8 @@ Rel_L(cnpg_pod,s3,"")
 Rel_R(checker,mm,"")
 @enduml
 ```
-</template>
-<template #light>
-```plantuml{scale: 0.7}
-@startuml
-skinparam {
-  backgroundcolor transparent
-  rectangle<<DUMMY>> {
-    borderColor transparent
-    stereotypeFontSize 0
-    fontSize 0
-  }
-}
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
 
-HIDE_STEREOTYPE()
-
-UpdateBoundaryStyle($borderStyle="line")
-
-Boundary(a0,'Kubernetes Cluster' ){
-  rectangle padding <<DUMMY>> {
-    Container(stepca_ing,"Step-CA","Ingress")
-    Container(stepca_svc,"Step-CA", "Service")
-    Container(stepca_pod,"Step-CA", "Pods")
-    Container(cnpg_svc,"CloudNativePG","Service")
-    Container(cnpg_pod,"CloudNativePG","Pods")
-    Container(checker,"Cert-Checker","K8s CronJob")
-  }
-}
-Boundary(b0,'Kubernetes Cluster' ){
-}
-System(s3, "S3")
-System(mm, "Mattermost")
-
-Rel(b0,stepca_ing,"")
-Rel_L(stepca_ing,stepca_svc,"")
-Rel_L(stepca_svc,stepca_pod,"")
-Rel_D(stepca_pod,cnpg_svc,"")
-Rel_L(cnpg_svc,cnpg_pod,"")
-Rel_R(cnpg_svc,checker,"")
-Rel_L(cnpg_pod,s3,"")
-Rel_R(checker,mm,"")
-@enduml
-```
-</template>
+  </template>
 </LightOrDark>
 </div>
 
