@@ -463,28 +463,32 @@ Rel_R(checker,mm,"")
 
 ---
 
-# Automated TLS Certificate Creation
+## Automated TLS Certificate Creation
 
-<div class="flex items-center justify-center">
-```mermaid{scale: 0.5,mirrorActors: false}
+<div class="flex items-center justify-center mt-3">
+```mermaid{scale: 0.48,mirrorActors: false}
 sequenceDiagram
   autonumber
   participant C as Cert-Manager
   participant K as kube-apiserver
   participant CA as Smallstep
-  C->>+K: Request Ingress records
-  K-->-C: Return Ingress records
-  C->>C: Generate Certificate Signing Request
-  C->>+CA: Submit Certificate Signing Request
-  CA-->>-C: Return HTTP-01 challenge
-  C->>+K: Create HTTP-01 challenge resources
-  K-->>-C: HTTP-01 challenge resources created
-  C->>+CA: HTTP-01 challenge ready
-  CA->>+K: Verify HTTP-01 challenge
-  K-->>-CA: Correct HTTP-01 challenge
-  CA-->>-C: Return TLS certificate
-  C->>+K: Inject TLS certificate for HTTPS
-  K-->>-C: Ingress uses TLS certificate for HTTPS
+  loop every 15 seconds
+    C->>+K: Request Ingress records
+    K-->-C: Return Ingress records
+  end
+  opt new Ingress HTTPS record
+    C->>C: Generate Certificate Signing Request
+    C->>+CA: Submit Certificate Signing Request
+    CA-->>-C: Return HTTP-01 challenge
+    C->>+K: Create HTTP-01 challenge resources
+    K-->>-C: HTTP-01 challenge resources created
+    C->>+CA: HTTP-01 challenge ready
+    CA->>+K: Verify HTTP-01 challenge
+    K-->>-CA: Correct HTTP-01 challenge
+    CA-->>-C: Return TLS certificate
+    C->>+K: Inject TLS certificate for HTTPS
+    K-->>-C: Ingress uses TLS certificate for HTTPS
+  end
 ```
 </div>
 
