@@ -121,7 +121,7 @@ System(vra, "VMware vRealise Automation")
 Boundary(b0,"Active Directory Domain Services") {
   rectangle padding2 <<DUMMY>> {
     Boundary(zone,"example.com","DNS Zone",$tags="zone"){
-      Container(record,"app.example.com","'A' record")
+      Container(record,"app.example.com","A record")
     }
     Person_Ext(svc_acc,"Minimum permissible account",$sprite="robot")
   }
@@ -134,7 +134,7 @@ Rel(dev,ingress,"Creates  Ingress-App")
 Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
 Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
 Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
-Rel_D(svc_acc,record,"Creates  'A'  record")
+Rel_D(svc_acc,record,"Creates  A  record")
 BiRel_L(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
 Rel(cert_mgr,acme_pod,"Creates  pod  hosting  HTTP-01  challenge")
 Rel_D(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
@@ -183,7 +183,7 @@ System(vra, "VMware vRealise Automation")
 Boundary(b0,"Active Directory Domain Services") {
   rectangle padding2 <<DUMMY>> {
     Boundary(zone,"example.com","DNS Zone",$tags="zone"){
-      Container(record,"app.example.com","'A' record")
+      Container(record,"app.example.com","A record")
     }
     Person_Ext(svc_acc,"Minimum permissible account",$sprite="robot")
   }
@@ -196,7 +196,7 @@ Rel(dev,ingress,"Creates  Ingress-App")
 Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
 Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
 Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
-Rel_D(svc_acc,record,"Creates  'A'  record")
+Rel_D(svc_acc,record,"Creates  A  record")
 BiRel_L(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
 Rel(cert_mgr,acme_pod,"Creates  pod  hosting  HTTP-01  challenge")
 Rel_D(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
@@ -222,8 +222,8 @@ Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 
 ## Active Directory
 - Enable VMware vRealize Automation to create minimum permissible accounts
-- Minimum permissible accounts can only create 'A' records in a specific DNS zone, update and delete own records
-- Zone-Transfer needs to be enabled for External-DNS to be able to compare 'A' records
+- Minimum permissible accounts can only create A records in a specific DNS zone, update and delete own records
+- Zone-Transfer needs to be enabled for External-DNS to be able to compare A records
 - Allow Zone-Transfer only for specific DNS zone to Tanzu Egress CIDR range
 
 
@@ -268,8 +268,8 @@ sequenceDiagram
     E->>E: Compares DNS records with Ingress records
   end
   opt Detected Changes
-    E->>+AD: Create 'A' records, as well as 'TXT' records to tag the 'A' records the cluster ID
-    AD-->>-E: 'A' records and 'TXT' records created
+    E->>+AD: Create A records, as well as TXT records to tag the A records the cluster ID
+    AD-->>-E: A records and TXT records created
   end
 ```
 </div>
