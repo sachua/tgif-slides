@@ -2,9 +2,7 @@
 layout: cover
 titleTemplate: '%s'
 author: Chua Song Ann
-download: true
-export:
-  dark: true
+download: 'https://raw.githubusercontent.com/sachua/tgif-slides/main/slides-export.pdf'
 ---
 
 # DNS + Certificates
