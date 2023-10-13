@@ -213,18 +213,12 @@ Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
 
 
 ---
+layout: statement
+---
 
-## External-DNS
-- Allows controlling of DNS records dynamically via Kubernetes in a DNS provider-agnostic way
-- Available for various DNS providers, including RFC2136 with Kerberos for Windows Server Active Directory
-- Deployed into individual downstream clusters
-- <span style="color: #fa4b4b;">Does not support multi-cluster natively</span>
+# No native multi-cluster support
 
-## Active Directory
-- Enable VMware vRealize Automation to create minimum permissible accounts
-- Minimum permissible accounts can only create A records in a specific DNS zone, update and delete own records
-- Zone-Transfer needs to be enabled for External-DNS to be able to compare A records
-- Allow Zone-Transfer only for specific DNS zone to Tanzu Egress CIDR range
+External-DNS is built for single-cluster use-cases
 
 
 ---
@@ -458,19 +452,6 @@ Rel_R(checker,mm,"")
 
 ---
 
-# Cert-Manager
-
-- Adds certificates and certificate issuers as resource types in Kubernetes clusters
-- Simplifies process of obtaining, renewing and using those certificates
-- Deployed into individual downstream clusters
-
-<div class="flex items-center justify-center mt-20">
-  <img class="h-50" src="/acme.png">
-</div>
-
-
----
-
 ## Automated TLS Certificate Creation
 
 <div class="flex items-center justify-center mt-3">
@@ -520,6 +501,138 @@ class: text-center
 - Distributed initialisation system that makes it easy to customize applications and manage clusters from a single point
 <div class="flex items-center justify-center mt-10">
   <img class="h-50" src="/fleet.png">
+</div>
+
+
+---
+
+# Another look at the architecture
+
+<div class="flex items-center justify-center h-100">
+<LightOrDark>
+  <template #light>
+
+```plantuml{scale: 0.85}
+@startuml
+skinparam {
+  backgroundcolor transparent
+  rectangle<<DUMMY>> {
+    borderColor transparent
+    stereotypeFontSize 0
+    fontSize 0
+  }
+}
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+HIDE_STEREOTYPE()
+
+UpdateBoundaryStyle($borderStyle="line")
+AddBoundaryTag("zone", $bgColor="#1f427a", $fontColor="white", $borderThickness="0")
+
+Person(dev,"Developer",)
+Boundary(a0,'Kubernetes Cluster' ){
+  rectangle padding <<DUMMY>> {
+    Container(ingress,"Ingress-App","Ingress")
+    System(ext_dns,"External-DNS")
+    System(cert_mgr,"Cert-Manager")
+    Container(acme_pod,"ACME Solver","Pod")
+    Container(acme_ing,"Ingress-ACME","Ingress")
+    Container(cert,"Cert-Secret","Secret")
+  }
+}
+System(vra, "VMware vRealise Automation")
+Boundary(b0,"Active Directory Domain Services") {
+  rectangle padding2 <<DUMMY>> {
+    Boundary(zone,"example.com","DNS Zone",$tags="zone"){
+      Container(record,"app.example.com","A record")
+    }
+    Person_Ext(svc_acc,"Minimum permissible account",$sprite="robot")
+  }
+}
+System(ca, "Smallstep","Intermediate Certificate Authority")
+
+Rel_R(dev,vra,"Use  account  creation  catalog")
+Rel(vra,svc_acc,"Creates  minimum  permissible  account")
+Rel(dev,ingress,"Creates  Ingress-App")
+Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
+Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
+Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
+Rel_D(svc_acc,record,"Creates  A  record")
+BiRel_L(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
+Rel(cert_mgr,acme_pod,"Creates  pod  hosting  HTTP-01  challenge")
+Rel_D(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
+Rel(ca,acme_ing,"Verifies  HTTP-01  challenge")
+Rel_R(acme_ing,acme_pod,"")
+Rel_R(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
+Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
+@enduml
+```
+
+  </template>
+  <template #dark>
+
+```plantuml{scale: 0.85}
+@startuml
+skinparam {
+  backgroundcolor transparent
+  rectangle<<DUMMY>> {
+    borderColor transparent
+    stereotypeFontSize 0
+    fontSize 0
+  }
+}
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+HIDE_STEREOTYPE()
+
+UpdateBoundaryStyle($fontColor="#d2d4d2",$borderColor="#d2d4d2",$borderStyle="line")
+UpdateRelStyle($textColor="#d2d4d2",$lineColor="#d2d4d2")
+AddBoundaryTag("zone", $bgColor="#1f427a", $fontColor="white", $borderThickness="0")
+AddSystemTag("highlight",$bgColor="#17a348",$borderColor="#0f6e30")
+
+Person(dev,"Developer",)
+Boundary(a0,'Kubernetes Cluster' ){
+  rectangle padding <<DUMMY>> {
+    Container(ingress,"Ingress-App","Ingress")
+    System(ext_dns,"External-DNS",$tags="highlight")
+    System(cert_mgr,"Cert-Manager",$tags="highlight")
+    Container(acme_pod,"ACME Solver","Pod")
+    Container(acme_ing,"Ingress-ACME","Ingress")
+    Container(cert,"Cert-Secret","Secret")
+  }
+}
+System(vra, "VMware vRealise Automation")
+Boundary(b0,"Active Directory Domain Services") {
+  rectangle padding2 <<DUMMY>> {
+    Boundary(zone,"example.com","DNS Zone",$tags="zone"){
+      Container(record,"app.example.com","A record")
+    }
+    Person_Ext(svc_acc,"Minimum permissible account",$sprite="robot")
+  }
+}
+System(ca, "Smallstep","Intermediate Certificate Authority")
+
+Rel_R(dev,vra,"Use  account  creation  catalog")
+Rel(vra,svc_acc,"Creates  minimum  permissible  account")
+Rel(dev,ingress,"Creates  Ingress-App")
+Rel_R(ingress,ext_dns,"External-DNS  detects  new  ingress")
+Rel_D(ingress,cert_mgr,"Cert-Manager  detects  new  ingress")
+Rel_R(ext_dns,svc_acc,"Syncs  with  DNS  Zone  using  minimum  permissible  account")
+Rel_D(svc_acc,record,"Creates  A  record")
+BiRel_L(cert_mgr,ca,"Communicates  with  Intermediate  Certificate  Authority")
+Rel(cert_mgr,acme_pod,"Creates  pod  hosting  HTTP-01  challenge")
+Rel_D(cert_mgr,acme_ing,"Creates  HTTP-01  ingress")
+Rel(ca,acme_ing,"Verifies  HTTP-01  challenge")
+Rel_R(acme_ing,acme_pod,"")
+Rel_R(cert_mgr,cert,"Creates  secret  containing  TLS  certificate")
+Rel(ingress,cert,"Refers  to  secret  for  TLS  certificate")
+@enduml
+```
+
+  </template>
+</LightOrDark>
 </div>
 
 
