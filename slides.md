@@ -440,8 +440,8 @@ Rel_L(stepca_svc,stepca_pod,"")
 Rel_D(stepca_pod,cnpg_svc,"")
 Rel_L(cnpg_svc,cnpg_pod,"")
 Rel_R(cnpg_svc,checker,"")
-Rel_L(cnpg_pod,s3,"")
-Rel_R(checker,mm,"")
+Rel_L(cnpg_pod,s3,"Daily  backups")
+Rel_R(checker,mm,"Alert  if  certificates  expiring  and  not  renewed")
 @enduml
 ```
 
