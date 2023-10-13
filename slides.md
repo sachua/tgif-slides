@@ -641,6 +641,9 @@ layout: section
 ---
 
 # Thank you
+
 <div class="flex items-center justify-center">
   <img class="h-40" src="/thumbs-up.gif">
 </div>
+
+<span style="color: #808080;font-size: 15px">Slides available at sachua.github.io/tgif-slides/</span>
