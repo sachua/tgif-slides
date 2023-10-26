@@ -29,14 +29,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Install slidev
-        run:  bun i -g @slidev/cli
-
-      - name: Install Playwright
-        run: bun i -D playwright-chromium && bunx playwright install
-
       - name: Build
-        run: slidev build --base tgif-slides
+        run: bun run build
 
       - uses: actions/configure-pages@v3
 
