@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/javascript-node:1-18-bullseye
 
-RUN sudo apt-get update \
+RUN sudo apt-get update --fix-missing \
     && sudo apt-get install -y --no-install-recommends libnss3 \
     ibnspr4 \
     ibatk1.0-0 \
